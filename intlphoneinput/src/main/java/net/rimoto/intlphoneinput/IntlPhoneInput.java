@@ -31,18 +31,36 @@ public class IntlPhoneInput extends RelativeLayout {
     // UI Views
     private Spinner mCountrySpinner;
     private EditText mPhoneEdit;
-
     //Adapters
     private CountrySpinnerAdapter mCountrySpinnerAdapter;
     private PhoneNumberWatcher mPhoneNumberWatcher = new PhoneNumberWatcher(DEFAULT_COUNTRY);
-
     //Util
     private PhoneNumberUtil mPhoneUtil = PhoneNumberUtil.getInstance();
-
     // Fields
     private Country mSelectedCountry;
     private CountriesFetcher.CountryList mCountries;
     private IntlPhoneInputListener mIntlPhoneInputListener;
+    /**
+     * Spinner listener
+     */
+    private AdapterView.OnItemSelectedListener mCountrySpinnerListener = new AdapterView.OnItemSelectedListener() {
+        @Override
+        public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+            mSelectedCountry = mCountrySpinnerAdapter.getItem(position);
+
+            //Make sure that the watcher is added into the listeners of the edittext
+            //after updating the country selected...
+            mPhoneEdit.removeTextChangedListener(mPhoneNumberWatcher);
+            mPhoneNumberWatcher = new PhoneNumberWatcher(mSelectedCountry.getIso());
+            mPhoneEdit.addTextChangedListener(mPhoneNumberWatcher);
+
+            setHint();
+        }
+
+        @Override
+        public void onNothingSelected(AdapterView<?> parent) {
+        }
+    };
 
     /**
      * Constructor
@@ -63,6 +81,10 @@ public class IntlPhoneInput extends RelativeLayout {
     public IntlPhoneInput(Context context, AttributeSet attrs) {
         super(context, attrs);
         init(attrs);
+    }
+
+    public EditText getPhoneEdit() {
+        return mPhoneEdit;
     }
 
     /**
@@ -186,69 +208,19 @@ public class IntlPhoneInput extends RelativeLayout {
     }
 
     /**
-     * Spinner listener
+     * Get number
+     *
+     * @return Phone number in E.164 format | null on error
      */
-    private AdapterView.OnItemSelectedListener mCountrySpinnerListener = new AdapterView.OnItemSelectedListener() {
-        @Override
-        public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-            mSelectedCountry = mCountrySpinnerAdapter.getItem(position);
+    @SuppressWarnings("unused")
+    public String getNumber() {
+        Phonenumber.PhoneNumber phoneNumber = getPhoneNumber();
 
-            //Make sure that the watcher is added into the listeners of the edittext
-            //after updating the country selected...
-            mPhoneEdit.removeTextChangedListener(mPhoneNumberWatcher);
-            mPhoneNumberWatcher = new PhoneNumberWatcher(mSelectedCountry.getIso());
-            mPhoneEdit.addTextChangedListener(mPhoneNumberWatcher);
-
-            setHint();
+        if (phoneNumber == null) {
+            return null;
         }
 
-        @Override
-        public void onNothingSelected(AdapterView<?> parent) {
-        }
-    };
-
-    /**
-     * Phone number watcher
-     */
-    private class PhoneNumberWatcher extends PhoneNumberFormattingTextWatcher {
-        private boolean lastValidity;
-
-        @SuppressWarnings("unused")
-        public PhoneNumberWatcher() {
-            super();
-        }
-
-        //TODO solve it! support for android kitkat
-        @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-        public PhoneNumberWatcher(String countryCode) {
-            super(countryCode);
-        }
-
-        @Override
-        public void onTextChanged(CharSequence s, int start, int before, int count) {
-            super.onTextChanged(s, start, before, count);
-            try {
-                String iso = null;
-                if (mSelectedCountry != null) {
-                    iso = mSelectedCountry.getIso();
-                }
-                Phonenumber.PhoneNumber phoneNumber = mPhoneUtil.parse(s.toString(), iso);
-                iso = mPhoneUtil.getRegionCodeForNumber(phoneNumber);
-                if (iso != null) {
-                    int countryIdx = mCountries.indexOfIso(iso);
-                    mCountrySpinner.setSelection(countryIdx);
-                }
-            } catch (NumberParseException ignored) {
-            }
-
-            if (mIntlPhoneInputListener != null) {
-                boolean validity = isValid();
-                if (validity != lastValidity) {
-                    mIntlPhoneInputListener.done(IntlPhoneInput.this, validity);
-                }
-                lastValidity = validity;
-            }
-        }
+        return mPhoneUtil.format(phoneNumber, PhoneNumberUtil.PhoneNumberFormat.E164);
     }
 
     /**
@@ -263,31 +235,15 @@ public class IntlPhoneInput extends RelativeLayout {
                 iso = mSelectedCountry.getIso();
             }
             Phonenumber.PhoneNumber phoneNumber = mPhoneUtil.parse(number, iso);
-			
+
             int countryIdx = mCountries.indexOfIso(mPhoneUtil.getRegionCodeForNumber(phoneNumber));
-			mSelectedCountry = mCountries.get(countryIdx);		
+            mSelectedCountry = mCountries.get(countryIdx);
             mCountrySpinner.setSelection(countryIdx);
-			
-			
+
+
             mPhoneEdit.setText(mPhoneUtil.format(phoneNumber, PhoneNumberUtil.PhoneNumberFormat.NATIONAL));
         } catch (NumberParseException ignored) {
         }
-    }
-
-    /**
-     * Get number
-     *
-     * @return Phone number in E.164 format | null on error
-     */
-    @SuppressWarnings("unused")
-    public String getNumber() {
-        Phonenumber.PhoneNumber phoneNumber = getPhoneNumber();
-
-        if (phoneNumber == null) {
-            return null;
-        }
-
-        return mPhoneUtil.format(phoneNumber, PhoneNumberUtil.PhoneNumberFormat.E164);
     }
 
     public String getText() {
@@ -375,13 +331,6 @@ public class IntlPhoneInput extends RelativeLayout {
         mPhoneEdit.setError(error, icon);
     }
 
-    /**
-     * Simple validation listener
-     */
-    public interface IntlPhoneInputListener {
-        void done(View view, boolean isValid);
-    }
-
     @Override
     public void setEnabled(boolean enabled) {
         super.setEnabled(enabled);
@@ -404,5 +353,56 @@ public class IntlPhoneInput extends RelativeLayout {
                 return false;
             }
         });
+    }
+
+    /**
+     * Simple validation listener
+     */
+    public interface IntlPhoneInputListener {
+        void done(View view, boolean isValid);
+    }
+
+    /**
+     * Phone number watcher
+     */
+    private class PhoneNumberWatcher extends PhoneNumberFormattingTextWatcher {
+        private boolean lastValidity;
+
+        @SuppressWarnings("unused")
+        public PhoneNumberWatcher() {
+            super();
+        }
+
+        //TODO solve it! support for android kitkat
+        @TargetApi(Build.VERSION_CODES.LOLLIPOP)
+        public PhoneNumberWatcher(String countryCode) {
+            super(countryCode);
+        }
+
+        @Override
+        public void onTextChanged(CharSequence s, int start, int before, int count) {
+            super.onTextChanged(s, start, before, count);
+            try {
+                String iso = null;
+                if (mSelectedCountry != null) {
+                    iso = mSelectedCountry.getIso();
+                }
+                Phonenumber.PhoneNumber phoneNumber = mPhoneUtil.parse(s.toString(), iso);
+                iso = mPhoneUtil.getRegionCodeForNumber(phoneNumber);
+                if (iso != null) {
+                    int countryIdx = mCountries.indexOfIso(iso);
+                    mCountrySpinner.setSelection(countryIdx);
+                }
+            } catch (NumberParseException ignored) {
+            }
+
+            if (mIntlPhoneInputListener != null) {
+                boolean validity = isValid();
+                if (validity != lastValidity) {
+                    mIntlPhoneInputListener.done(IntlPhoneInput.this, validity);
+                }
+                lastValidity = validity;
+            }
+        }
     }
 }
