@@ -3,6 +3,7 @@ package net.rimoto.intlphoneinput;
 
 import android.content.Context;
 
+import org.apache.commons.lang3.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -10,6 +11,9 @@ import org.json.JSONObject;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Locale;
 
 public class CountriesFetcher {
     private static CountryList mCountries;
@@ -48,11 +52,16 @@ public class CountriesFetcher {
             return mCountries;
         }
         mCountries = new CountryList();
+
+
+        Locale[] locales = Locale.getAvailableLocales();
+
         try {
             JSONArray countries = new JSONArray(getJsonFromRaw(context, R.raw.countries));
             for (int i = 0; i < countries.length(); i++) {
                 try {
                     JSONObject country = (JSONObject) countries.get(i);
+
                     mCountries.add(new Country(country.getString("name"), country.getString("iso2"), country.getInt("dialCode")));
                 } catch (JSONException e) {
                     e.printStackTrace();
@@ -61,6 +70,30 @@ public class CountriesFetcher {
         } catch (JSONException e) {
             e.printStackTrace();
         }
+
+
+        for (Country country : mCountries) {
+
+            for (Locale locale : locales) {
+
+                if (StringUtils.equalsIgnoreCase(locale.getCountry(), country.getIso())) {
+
+                    country.setName(locale.getDisplayCountry());
+
+                    break;
+                }
+
+            }
+
+        }
+
+        Collections.sort(mCountries, new Comparator<Country>() {
+            @Override
+            public int compare(Country o1, Country o2) {
+                return StringUtils.compareIgnoreCase(StringUtils.stripAccents(o1.getName()), StringUtils.stripAccents(o2.getName()));
+            }
+        });
+
         return mCountries;
     }
 

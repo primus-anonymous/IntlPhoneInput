@@ -943,13 +943,6 @@
     "areaCodes": null
   },
   {
-    "name": "Maldives",
-    "iso2": "mv",
-    "dialCode": "960",
-    "priority": 0,
-    "areaCodes": null
-  },
-  {
     "name": "Mali",
     "iso2": "ml",
     "dialCode": "223",
@@ -1527,13 +1520,6 @@
     "areaCodes": null
   },
   {
-    "name": "Tajikistan",
-    "iso2": "tj",
-    "dialCode": "992",
-    "priority": 0,
-    "areaCodes": null
-  },
-  {
     "name": "Tanzania",
     "iso2": "tz",
     "dialCode": "255",
@@ -1593,13 +1579,6 @@
     "name": "Turkey (Türkiye)",
     "iso2": "tr",
     "dialCode": "90",
-    "priority": 0,
-    "areaCodes": null
-  },
-  {
-    "name": "Turkmenistan",
-    "iso2": "tm",
-    "dialCode": "993",
     "priority": 0,
     "areaCodes": null
   },
@@ -1678,13 +1657,6 @@
     "iso2": "vu",
     "dialCode": "678",
     "priority": 0,
-    "areaCodes": null
-  },
-  {
-    "name": "Vatican City (Città del Vaticano)",
-    "iso2": "va",
-    "dialCode": "39",
-    "priority": 1,
     "areaCodes": null
   },
   {

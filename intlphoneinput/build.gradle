@@ -7,8 +7,8 @@ android {
     defaultConfig {
         minSdkVersion 14
         targetSdkVersion 25
-        versionCode 101
-        versionName "1.0.1"
+        versionCode 102
+        versionName "1.0.2"
     }
     buildTypes {
         release {
@@ -19,8 +19,9 @@ android {
 }
 
 dependencies {
-    compile 'com.googlecode.libphonenumber:libphonenumber:7.7.2'
-    compile 'com.android.support:appcompat-v7:25.2.0'
+    implementation 'com.googlecode.libphonenumber:libphonenumber:7.7.2'
+    implementation 'com.android.support:appcompat-v7:25.2.0'
+    implementation 'org.apache.commons:commons-lang3:3.7'
 }
 
 ext {
